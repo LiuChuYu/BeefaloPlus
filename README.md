@@ -11,4 +11,5 @@ Currently, most of the actions doesn't work. Guaranteed working actions are:
 1. [x] Add SPACE support (press space to automatically do things)
 2. [ ] Chop/Dig/Mine/Hammer ... (should all use the same fix)
 3. [ ] Use structures like chester/crockpot/fridge
+ - check out componentactions 
 4. [ ] Feed beefalo while on it (probably hard)
