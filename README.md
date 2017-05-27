@@ -5,7 +5,7 @@ It adds the functionality to do everything you can do normally on a beefalo.
 Currently, most of the actions doesn't work. Guaranteed working actions are:
 1. picking (grass/twig/flower .etc), 
 2. picking up (things dropped on the ground)
-3. storing (things in chest/chester)
+3. use structures that doesn't have sub-interfaces (like chest/chester)
 
 # TODO 
 1. [x] Add SPACE support (press space to automatically do things)
