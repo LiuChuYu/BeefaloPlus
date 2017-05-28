@@ -36,7 +36,7 @@ forumthread = ""
 
 configuration_options = {
   {
-    name = "Choping",
+    name = "Chopping",
     label = "Chopping",
     options = {
       {description = "On", data = "on"},
