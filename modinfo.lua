@@ -8,7 +8,7 @@ description = "Do work while riding a beefalo. "
 author = "Ps-Pencil"
 
 --A version number so you can ask people if they are running an old version of your mod.
-version = "1.05"
+version = "1.06"
 
 --This lets other players know if your mod is out of date. This typically needs to be updated every time there's a new game update.
 api_version = 6
@@ -70,5 +70,14 @@ configuration_options = {
       {description = "Off", data = "off"},
     },
     default = "on"
+  },
+  {
+    name = "Jumping",
+    label = "Using wormholes",
+    options = {
+      {description = "On", data = "on"},
+      {description = "Off", data = "off"},
+    },
+  default = "on",
   },
 }
