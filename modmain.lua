@@ -4,7 +4,7 @@ local function MountedActionFilter(inst, action)
 end
 
 local function RiderPostInit(self)
-  self.SetActionFilter = function(riding)
+  self.SetActionFilter = function(self,riding)
     if self.inst.components.playercontroller ~= nil then
       if riding then
         self.inst.components.playeractionpicker:PushActionFilter(MountedActionFilter, 20)
@@ -21,7 +21,7 @@ local chop = GetModConfigData("Chopping",true) == "on"
 local dig = GetModConfigData("Digging",true) == "on"
 local hammer = GetModConfigData("Hammering",true) == "on"
 local mine = GetModConfigData("Mining",true) == "on"
-local mine = GetModConfigData("Jumping",true) == "on"
+local jump = GetModConfigData("Jumping",true) == "on"
 
 local COLLISION = GLOBAL.COLLISION
 local function SGwilsonPostInit(self)
