@@ -170,3 +170,15 @@ for i,v in pairs(ACTIONS) do
     v.mount_valid = false
   end
 end
+
+-- Feeding the bird
+
+local function tradablefn(inst, doer, target, actions)
+  if target:HasTag("trader") and
+    not (target:HasTag("player") or target:HasTag("ghost")) and
+    (doer.replica.rider ~= nil and doer.replica.rider:IsRiding() and
+     not (target.replica.inventoryitem ~= nil and target.replica.inventoryitem:IsGrandOwner(doer))) then
+      table.insert(actions, ACTIONS.GIVE)
+  end
+end
+AddComponentAction("USEITEM","tradable",tradablefn,"WorkOnBeefalo")
