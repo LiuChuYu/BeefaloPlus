@@ -80,4 +80,13 @@ configuration_options = {
     },
   default = "on",
   },
+  {
+    name = "Feeding",
+    label = "Feeding birds",
+    options = {
+      {description = "On", data = "on"},
+      {description = "Off", data = "off"},
+    },
+    default = "on",
+  },
 }

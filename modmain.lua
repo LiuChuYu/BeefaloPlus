@@ -22,6 +22,7 @@ local dig = GetModConfigData("Digging",true) == "on"
 local hammer = GetModConfigData("Hammering",true) == "on"
 local mine = GetModConfigData("Mining",true) == "on"
 local jump = GetModConfigData("Jumping",true) == "on"
+local feed = GetModConfigData("Feeding",true) == "on"
 
 local COLLISION = GLOBAL.COLLISION
 local function SGwilsonPostInit(self)
@@ -173,12 +174,14 @@ end
 
 -- Feeding the bird
 
--- local function tradablefn(inst, doer, target, actions)
---   if target:HasTag("trader") and
---     not (target:HasTag("player") or target:HasTag("ghost")) and
---     (doer.replica.rider ~= nil and doer.replica.rider:IsRiding() and
---      not (target.replica.inventoryitem ~= nil and target.replica.inventoryitem:IsGrandOwner(doer))) then
---       table.insert(actions, ACTIONS.GIVE)
---   end
--- end
--- AddComponentAction("USEITEM","tradable",tradablefn,"WorkOnBeefalo")
+local function tradablefn(inst, doer, target, actions)
+  if target:HasTag("trader") and
+    not (target:HasTag("player") or target:HasTag("ghost")) and
+    (doer.replica.rider ~= nil and doer.replica.rider:IsRiding() and
+     not (target.replica.inventoryitem ~= nil and target.replica.inventoryitem:IsGrandOwner(doer))) then
+      table.insert(actions, ACTIONS.GIVE)
+  end
+end
+if feed then
+  AddComponentAction("USEITEM","tradable",tradablefn)
+end
