@@ -8,12 +8,12 @@ description = "Do work while riding a beefalo. "
 author = "Ps-Pencil"
 
 --A version number so you can ask people if they are running an old version of your mod.
-version = "1.10"
+version = "1.11"
 
 --This lets other players know if your mod is out of date. This typically needs to be updated every time there's a new game update.
 api_version = 6
 api_version_dst = 10
-priority = 0
+priority = -1
 
 --Compatible with both the base game and Reign of Giants
 dont_starve_compatible = false

@@ -185,3 +185,9 @@ end
 if feed then
   AddComponentAction("USEITEM","tradable",tradablefn)
 end
+
+-- Compatibility: Soulmates 
+
+if ACTIONS["SOULMATETP"] then
+  ACTIONS["SOULMATETP"].mount_valid = true
+end
