@@ -56,29 +56,18 @@ function dumptable(obj, indent, recurse_levels, visit_table, is_terse)
 end
 -------------------------------------------------------------------------------------debug
 local ACTIONS = GLOBAL.ACTIONS
-local MOUNTED_PICKUP_TAGS = {
-  "_inventoryitem",
-  "pickable",
-  "donecooking",
-  "readyforharvest",
-  "notreadyforharvest",
-  "harvestable",
-  "trapsprung",
-  "minesprung",
-  "dried",
-  "inactive",
-  "smolder",
-  "saddled",
-  "brushable",
-  "tapped_harvestable",
-}
-
+local CanEntitySeeTarget = GLOBAL.CanEntitySeeTarget
+local BufferedAction = GLOBAL.BufferedAction
 local MOUNTED_ACTION_TAGS = {}
+local TARGET_EXCLUDE_TAGS = { "FX", "NOCLICK", "DECOR", "INLIMBO" }
+local PICKUP_TARGET_EXCLUDE_TAGS = { "catchable", "mineactive", "intense" }
+local HAUNT_TARGET_EXCLUDE_TAGS = { "haunted", "catchable" }
+for i, v in ipairs(TARGET_EXCLUDE_TAGS) do
+    table.insert(PICKUP_TARGET_EXCLUDE_TAGS, v)
+    table.insert(HAUNT_TARGET_EXCLUDE_TAGS, v)
+end
 
-local MOUNTED_TARGET_EXCLUDE_TAGS = { "FX", "NOCLICK", "DECOR", "INLIMBO", "catchable", "sign" , "mineactive", "intense"}
-
-local function GetMountedAction(target)
-    
+local function GetPickupAction(inst, target)
     if target:HasTag("smolder") then
         return ACTIONS.SMOTHER
     elseif target:HasTag("quagmireharvestabletree") and not target:HasTag("fire") then
@@ -87,12 +76,12 @@ local function GetMountedAction(target)
         return ACTIONS.CHECKTRAP
     elseif target:HasTag("minesprung") then
         return ACTIONS.RESETMINE
-    -- elseif target:HasTag("inactive") then
-        -- return (not target:HasTag("wall") or self.inst:IsNear(target, 2.5)) and ACTIONS.ACTIVATE or nil
-    -- elseif target.replica.inventoryitem ~= nil and
-        -- target.replica.inventoryitem:CanBePickedUp() and
-        -- not (target:HasTag("heavy") or target:HasTag("fire") or target:HasTag("catchable")) then
-        -- return (self:HasItemSlots() or target.replica.equippable ~= nil) and ACTIONS.PICKUP or nil
+    elseif target:HasTag("inactive") then
+        return (not target:HasTag("wall") or inst:IsNear(target, 2.5)) and ACTIONS.ACTIVATE or nil
+    elseif target.replica.inventoryitem ~= nil and
+        target.replica.inventoryitem:CanBePickedUp() and
+        not (target:HasTag("heavy") or target:HasTag("fire") or target:HasTag("catchable")) then
+        return (inst.components.playercontroller:HasItemSlots() or target.replica.equippable ~= nil) and ACTIONS.PICKUP or nil
     elseif target:HasTag("pickable") and not target:HasTag("fire") then
         return ACTIONS.PICK
     elseif target:HasTag("harvestable") then
@@ -110,28 +99,70 @@ local function GetMountedAction(target)
         return ACTIONS.UNSADDLE
     elseif tool ~= nil and tool:HasTag("brush") and target:HasTag("brushable") and (not target.replica.health or not target.replica.health:IsDead()) then
         return ACTIONS.BRUSH
-    -- elseif self.inst.components.revivablecorpse ~= nil and target:HasTag("corpse") and ValidateCorpseReviver(target, self.inst) then
-        -- return ACTIONS.REVIVE_CORPSE
+    elseif inst.components.revivablecorpse ~= nil and target:HasTag("corpse") and ValidateCorpseReviver(target, inst) then
+        return ACTIONS.REVIVE_CORPSE
     end
 end
+local MOUNTED_PICKUP_TAGS = {
+  "_inventoryitem",
+  "pickable",
+  "donecooking",
+  "readyforharvest",
+  "notreadyforharvest",
+  "harvestable",
+  "trapsprung",
+  "minesprung",
+  "dried",
+  "inactive",
+  "smolder",
+  "saddled",
+  "brushable",
+  "tapped_harvestable",
+}
 
 local function MountedActionButton(inst, force_target)
+  
+    --catching
+    if inst:HasTag("cancatch") and not inst.components.playercontroller:IsDoingOrWorking() then
+        if force_target == nil then
+            local target = GLOBAL.FindEntity(inst, 10, nil, { "catchable" }, TARGET_EXCLUDE_TAGS)
+            if CanEntitySeeTarget(inst, target) then
+                return BufferedAction(inst, target, ACTIONS.CATCH)
+            end
+        elseif inst:GetDistanceSqToInst(force_target) <= 100 and
+            force_target:HasTag("catchable") then
+            return BufferedAction(inst, force_target, ACTIONS.CATCH)
+        end
+    end
+
+    --unstick
+    -- if force_target == nil then
+    --     local target = GLOBAL.FindEntity(inst, 10, nil, { "pinned" }, TARGET_EXCLUDE_TAGS)
+    --     if CanEntitySeeTarget(inst, target) then
+    --         return BufferedAction(inst, target, ACTIONS.UNPIN)
+    --     end
+    -- elseif inst:GetDistanceSqToInst(force_target) <= (inst.components.playercontroller.directwalking and 9 or 36) and
+    --     force_target:HasTag("pinned") then
+    --     return BufferedAction(inst, force_target, ACTIONS.UNPIN)
+    -- end
+
+    --pickup
     if not inst.components.playercontroller:IsDoingOrWorking() then
         if force_target == nil then
             local x, y, z = inst.Transform:GetWorldPosition()
-            local ents = TheSim:FindEntities(x, y, z, inst.components.playercontroller.directwalking and 3 or 6, nil, MOUNTED_TARGET_EXCLUDE_TAGS, MOUNTED_PICKUP_TAGS)
+            local ents = TheSim:FindEntities(x, y, z, inst.components.playercontroller.directwalking and 3 or 6, nil, PICKUP_TARGET_EXCLUDE_TAGS, MOUNTED_PICKUP_TAGS)
             for i, v in ipairs(ents) do
-                if v ~= inst and v.entity:IsVisible() and GLOBAL.CanEntitySeeTarget(inst, v) then
-                    local action = GetMountedAction(v)
+                if v ~= inst and v.entity:IsVisible() and CanEntitySeeTarget(inst, v) then
+                    local action = GetPickupAction(inst,v)
                     if action ~= nil then
-                        return GLOBAL.BufferedAction(inst, v, action)
+                        return BufferedAction(inst, v, action)
                     end
                 end
             end
         elseif inst:GetDistanceSqToInst(force_target) <= (inst.components.playercontroller.directwalking and 9 or 36) then
-            local action = GetMountedAction(force_target)
+            local action = GetPickupAction(inst,force_target)
             if action ~= nil then
-                return GLOBAL.BufferedAction(inst, force_target, action)
+                return BufferedAction(inst, force_target, action)
             end
         end
     end
