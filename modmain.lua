@@ -1,3 +1,6 @@
+
+local _G = GLOBAL
+local ACTIONS = _G.ACTIONS
 local valid_action = {
     PICK = GetModConfigData("Pick",true) == "on",
     PICKUP = GetModConfigData("PickUp",true) == "on",
@@ -12,8 +15,15 @@ local valid_action = {
     -- TURNON = GetModConfigData("Store",true) == "on",
     -- TURNOFF = GetModConfigData("Store",true) == "on",
 }
-local _G = GLOBAL
-local ACTIONS = _G.ACTIONS
+for i,v in pairs(ACTIONS) do
+  if valid_action[i] then
+    v.mount_valid = true
+  end
+end
+
+
+--Button SPACE
+
 local CanEntitySeeTarget = _G.CanEntitySeeTarget
 local BufferedAction = _G.BufferedAction
 local TARGET_EXCLUDE_TAGS = { "FX", "NOCLICK", "DECOR", "INLIMBO" }
@@ -75,7 +85,6 @@ local MOUNTED_PICKUP_TAGS = {
   "brushable",
   "tapped_harvestable",
 }
-
 local function MountedActionButton(inst, force_target)
 
     --catching
@@ -124,6 +133,9 @@ local function MountedActionButton(inst, force_target)
     end
 end
 
+
+
+-- Rider Action Init
 local function MountedActionFilter(inst, action)
   if action ~= nil then
     print(MountedActionFilter, _G.dumptable(action))
@@ -147,6 +159,9 @@ end
 
 AddClassPostConstruct("components/rider_replica",RiderPostInit)
 
+
+
+--Play Animation
 
 local COLLISION = _G.COLLISION
 local function SGwilsonPostInit(self)
@@ -237,7 +252,11 @@ local function SGwilsonPostInit(self)
     end
     self.states["heavylifting_start"].onenter = function(inst)
       inst.components.locomotor:Stop()
-      inst.AnimState:PlayAnimation("heavy_mount")
+      inst:ClearBufferedAction()
+      inst.AnimState:PlayAnimation(inst.components.rider:IsRiding() and "heavy_mount" or "heavy_pickup_pst")
+      if inst.components.playercontroller ~= nil then
+          inst.components.playercontroller:RemotePausePrediction()
+      end
     end
     self.states["exittownportal"].onenter = function(inst)
         --ToggleOffPhysics
@@ -246,18 +265,13 @@ local function SGwilsonPostInit(self)
         inst.Physics:CollidesWith(COLLISION.GROUND)
 
         inst.components.locomotor:Stop()
-        inst.AnimState:PlayAnimation("heavy_mount")
+        inst.AnimState:PlayAnimation(inst.components.rider:IsRiding() and "heavy_mount" or "townportal_exit_pst")
     end
   end
 end
 
 AddStategraphPostInit("wilson",SGwilsonPostInit)
 
-for i,v in pairs(ACTIONS) do
-  if valid_action[i] then
-    v.mount_valid = true
-  end
-end
 
 
 -- Feeding the bird
@@ -308,7 +322,6 @@ local function containerfn(inst, doer, actions, right)
         table.insert(actions, ACTIONS.RUMMAGE)
     end
 end
-
 
 if(valid_action.STORE) then
   AddComponentPostInit("container", ChangeContainerComponent)
