@@ -2,9 +2,9 @@
 local _G = GLOBAL
 local ACTIONS = _G.ACTIONS
 local valid_action = {
+    PICKUP = true,
     PICK = GetModConfigData("Pick",true) == "on",
-    PICKUP = GetModConfigData("PickUp",true) == "on",
-    HARVEST = GetModConfigData("PickUp",true) == "on",
+    HARVEST = GetModConfigData("Pick",true) == "on",
     GIVE = GetModConfigData("Feeding",true) == "on",
     JUMPIN = GetModConfigData("Jumping",true) == "on",
     TELEPORT = GetModConfigData("Teleport",true) == "on",
@@ -37,55 +37,69 @@ end
 local function GetPickupAction(inst, target)
     if target:HasTag("smolder") then
         return ACTIONS.SMOTHER
-    elseif target:HasTag("quagmireharvestabletree") and not target:HasTag("fire") then
-        return ACTIONS.HARVEST_TREE
-    elseif target:HasTag("trapsprung") then
-        return ACTIONS.CHECKTRAP
-    elseif target:HasTag("minesprung") then
-        return ACTIONS.RESETMINE
-    elseif target:HasTag("inactive") then
-        return (not target:HasTag("wall") or inst:IsNear(target, 2.5)) and ACTIONS.ACTIVATE or nil
-    elseif target.replica.inventoryitem ~= nil and
+    end
+    if valid_action.PICK then
+        if target:HasTag("quagmireharvestabletree") and not target:HasTag("fire") then
+            return ACTIONS.HARVEST_TREE
+        elseif target:HasTag("trapsprung") then
+            return ACTIONS.CHECKTRAP
+        elseif target:HasTag("minesprung") then
+            return ACTIONS.RESETMINE
+        elseif target:HasTag("inactive") then
+            return (not target:HasTag("wall") or inst:IsNear(target, 2.5)) and ACTIONS.ACTIVATE or nil
+        elseif target:HasTag("pickable") and not target:HasTag("fire") then
+            return ACTIONS.PICK
+        elseif target:HasTag("tapped_harvestable") and not target:HasTag("fire") then
+            return ACTIONS.HARVEST
+        elseif target:HasTag("harvestable") then
+            return ACTIONS.HARVEST
+        elseif target:HasTag("readyforharvest") or
+            (target:HasTag("notreadyforharvest") and target:HasTag("withered")) then
+            return ACTIONS.HARVEST
+        elseif target:HasTag("dried") and not target:HasTag("burnt") then
+            return ACTIONS.HARVEST
+        elseif target:HasTag("donecooking") and not target:HasTag("burnt") then
+            return ACTIONS.HARVEST
+        elseif tool ~= nil and tool:HasTag("unsaddler") and target:HasTag("saddled") and (not target.replica.health or not target.replica.health:IsDead()) then
+            return ACTIONS.UNSADDLE
+        elseif tool ~= nil and tool:HasTag("brush") and target:HasTag("brushable") and (not target.replica.health or not target.replica.health:IsDead()) then
+            return ACTIONS.BRUSH
+        elseif inst.components.revivablecorpse ~= nil and target:HasTag("corpse") and ValidateCorpseReviver(target, inst) then
+            return ACTIONS.REVIVE_CORPSE
+        end
+    end
+    if target.replica.inventoryitem ~= nil and
         target.replica.inventoryitem:CanBePickedUp() and
         not (target:HasTag("heavy") or target:HasTag("fire") or target:HasTag("catchable")) then
         return (inst.components.playercontroller:HasItemSlots() or target.replica.equippable ~= nil) and ACTIONS.PICKUP or nil
-    elseif target:HasTag("pickable") and not target:HasTag("fire") then
-        return ACTIONS.PICK
-    elseif target:HasTag("harvestable") then
-        return ACTIONS.HARVEST
-    elseif target:HasTag("readyforharvest") or
-        (target:HasTag("notreadyforharvest") and target:HasTag("withered")) then
-        return ACTIONS.HARVEST
-    elseif target:HasTag("tapped_harvestable") and not target:HasTag("fire") then
-    return ACTIONS.HARVEST
-    elseif target:HasTag("dried") and not target:HasTag("burnt") then
-        return ACTIONS.HARVEST
-    elseif target:HasTag("donecooking") and not target:HasTag("burnt") then
-        return ACTIONS.HARVEST
-    elseif tool ~= nil and tool:HasTag("unsaddler") and target:HasTag("saddled") and (not target.replica.health or not target.replica.health:IsDead()) then
-        return ACTIONS.UNSADDLE
-    elseif tool ~= nil and tool:HasTag("brush") and target:HasTag("brushable") and (not target.replica.health or not target.replica.health:IsDead()) then
-        return ACTIONS.BRUSH
-    elseif inst.components.revivablecorpse ~= nil and target:HasTag("corpse") and ValidateCorpseReviver(target, inst) then
-        return ACTIONS.REVIVE_CORPSE
     end
 end
+
+
+
 local MOUNTED_PICKUP_TAGS = {
   "_inventoryitem",
-  "pickable",
-  "donecooking",
-  "readyforharvest",
-  "notreadyforharvest",
   "harvestable",
-  "trapsprung",
-  "minesprung",
-  "dried",
-  "inactive",
-  "smolder",
-  "saddled",
-  "brushable",
-  "tapped_harvestable",
 }
+
+if valid_action.PICK then
+    MOUNTED_PICKUP_TAGS = {
+      "_inventoryitem",
+      "pickable",
+      "donecooking",
+      "readyforharvest",
+      "notreadyforharvest",
+      "harvestable",
+      "trapsprung",
+      "minesprung",
+      "dried",
+      "inactive",
+      "smolder",
+      "saddled",
+      "brushable",
+      "tapped_harvestable",
+    }
+end
 local function MountedActionButton(inst, force_target)
 
     --catching
