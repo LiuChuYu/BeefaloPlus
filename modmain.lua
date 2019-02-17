@@ -1,64 +1,6 @@
-
-local function SortByTypeAndValue(a, b)
-    local typea, typeb = type(a), type(b)
-    return typea < typeb or (typea == typeb and a < b)
-end
-
-function dumptablequiet(obj, indent, recurse_levels, visit_table)
-    return dumptable(obj, indent, recurse_levels, visit_table, true)
-end
-function dumptable(obj, indent, recurse_levels, visit_table, is_terse)
-    local is_top_level = visit_table == nil
-    if visit_table == nil then
-        visit_table = {}
-    end
-
-    indent = indent or 1
-    local i_recurse_levels = recurse_levels or 5
-    if obj then
-        local dent = string.rep("\t", indent)
-        if type(obj)==type("") then
-            print(obj)
-            return
-        end
-        if type(obj) == "table" then
-            if visit_table[obj] ~= nil then
-                print(dent.."(Already visited",obj,"-- skipping.)")
-                return
-            else
-                visit_table[obj] = true
-            end
-        end
-        local keys = {}
-        for k,v in pairs(obj) do
-            table.insert(keys, k)
-        end
-        table.sort(keys, SortByTypeAndValue)
-        if not is_terse and is_top_level and #keys == 0 then
-            print(dent.."(empty)")
-        end
-        for i,k in ipairs(keys) do
-            local v = obj[k]
-            if type(v) == "table" and i_recurse_levels>0 then
-                if v.entity and v.entity:GetGUID() then
-                    print(dent.."K: ",k," V: ", v, "(Entity -- skipping.)")
-                else
-                    print(dent.."K: ",k," V: ", v)
-                    dumptable(v, indent+1, i_recurse_levels-1, visit_table)
-                end
-            else
-                print(dent.."K: ",k," V: ",v)
-            end
-        end
-    elseif not is_terse then
-        print("nil")
-    end
-end
--------------------------------------------------------------------------------------debug
 local ACTIONS = GLOBAL.ACTIONS
 local CanEntitySeeTarget = GLOBAL.CanEntitySeeTarget
 local BufferedAction = GLOBAL.BufferedAction
-local MOUNTED_ACTION_TAGS = {}
 local TARGET_EXCLUDE_TAGS = { "FX", "NOCLICK", "DECOR", "INLIMBO" }
 local PICKUP_TARGET_EXCLUDE_TAGS = { "catchable", "mineactive", "intense" }
 local HAUNT_TARGET_EXCLUDE_TAGS = { "haunted", "catchable" }
@@ -121,7 +63,7 @@ local MOUNTED_PICKUP_TAGS = {
 }
 
 local function MountedActionButton(inst, force_target)
-  
+
     --catching
     if inst:HasTag("cancatch") and not inst.components.playercontroller:IsDoingOrWorking() then
         if force_target == nil then
@@ -168,28 +110,9 @@ local function MountedActionButton(inst, force_target)
     end
 end
 
------------------------------------------------------------mounted action button
-
-
-
--- local TARGET_EXCLUDE_TAGS = { "FX", "NOCLICK", "DECOR", "INLIMBO" }
--- local function ActionButtonOverride(inst, force_target)
---     --catching
---     if inst:HasTag("cancatch") and not inst.components.playercontroller:IsDoingOrWorking() then
---         if force_target == nil then
---             local target = FindEntity(inst, 10, nil, { "catchable" }, TARGET_EXCLUDE_TAGS)
---             if CanEntitySeeTarget(inst, target) then
---                 return BufferedAction(inst, target, ACTIONS.CATCH)
---             end
---         elseif inst:GetDistanceSqToInst(force_target) <= 100 and
---             force_target:HasTag("catchable") then
---             return BufferedAction(inst, force_target, ACTIONS.CATCH)
---         end
---     end
--- end
-
 local function MountedActionFilter(inst, action)
   if action ~= nil then
+    -- print(MountedActionFilter, GLOBAL.dumptable(action))
     return action.mount_valid == true
   end
 end
@@ -208,8 +131,10 @@ local function RiderPostInit(self)
   end
 end
 
-
 AddClassPostConstruct("components/rider_replica",RiderPostInit)
+
+
+
 local chop = GetModConfigData("Chopping",true) == "on"
 local dig = GetModConfigData("Digging",true) == "on"
 local hammer = GetModConfigData("Hammering",true) == "on"
@@ -219,48 +144,7 @@ local feed = GetModConfigData("Feeding",true) == "on"
 
 local COLLISION = GLOBAL.COLLISION
 local function SGwilsonPostInit(self)
-  if chop then
-    self.states["chop_start"].onenter = function(inst)
-      inst.components.locomotor:Stop()
-      inst.AnimState:PlayAnimation(inst:HasTag("woodcutter") and "woodie_chop_pre" or "chop_pre")
-      inst.sg:GoToState("chop")
-    end
-  end
-
-  if mine then
-    self.states["mine_start"].onenter =
-      function(inst)
-        inst.components.locomotor:Stop()
-        inst.AnimState:PlayAnimation("emote_pre_sit3")
-        -- data = { anim = { { "emote_pre_sit1", "emote_loop_sit1" }, { "emote_pre_sit3", "emote_loop_sit3" } }, randomanim = true, loop = true, fx = false, mounted = true, mountsound = "walk", mountsounddelay = 10 * FRAMES },
-        inst.sg:GoToState("mine")
-      end
-  end
-
-  if dig then
-    self.states["dig_start"].onenter =
-      function(inst)
-        inst.components.locomotor:Stop()
-        inst.AnimState:PlayAnimation("emote_pre_sit3")
-        inst.sg:GoToState("dig")
-      end
-  end
-
-  if hammer then
-    self.states["hammer_start"].onenter =
-      function(inst)
-        inst.components.locomotor:Stop()
-        inst.AnimState:PlayAnimation("emote_pre_sit3")
-        inst.sg:GoToState("hammer")
-      end
-  end
-
-  self.states["bugnet_start"].onenter =
-    function(inst)
-      inst.components.locomotor:Stop()
-      inst.AnimState:PlayAnimation("emote_pre_sit3")
-      inst.sg:GoToState("hammer")
-    end
+ 
   if jump then
     self.states["jumpin_pre"].onenter =
       function(inst)
@@ -343,6 +227,14 @@ local function SGwilsonPostInit(self)
       inst.Physics:SetMotorVel(4, 0, 0)
       inst.sg:GoToState("idle")
     end
+    self.states["heavylifting_start"].onenter = function(inst)
+      inst.components.locomotor:Stop()
+      inst.AnimState:PlayAnimation("heavy_mount")
+    end
+    self.states["exittownportal"].onenter = function(inst)
+        inst.components.locomotor:Stop()
+        inst.AnimState:PlayAnimation("heavy_mount")
+    end
   end
 end
 
@@ -353,17 +245,19 @@ function Set (list)
   for _, l in ipairs(list) do set[l] = true end
   return set
 end
-local exclude = Set {"HAUNT"}
-if not jump then
-  exclude["JUMPIN"] = true
-end
+local valid_action = {
+    PICK = true,
+    PICKUP = true,
+    GIVE = true,
+    JUMPIN = true,
+    TELEPORT = true,
+}
 for i,v in pairs(ACTIONS) do
-  if not exclude[i] then
-    if v.id == "PICK" or v.id == "PICKUP" then
-      v.mount_valid = true
-    end
+  if valid_action[i] then
+    v.mount_valid = true
   end
 end
+
 
 -- Feeding the bird
 
@@ -379,8 +273,5 @@ if feed then
   AddComponentAction("USEITEM","tradable",tradablefn)
 end
 
--- Compatibility: Soulmates 
-
-if ACTIONS["SOULMATETP"] then
-  ACTIONS["SOULMATETP"].mount_valid = true
-end
+-- attack
+-- ThePlayer.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS):HasTag("rangedweapon"))
