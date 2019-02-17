@@ -130,7 +130,7 @@ local function MountedActionButton(inst, force_target)
     if not inst.components.playercontroller:IsDoingOrWorking() then
         if force_target == nil then
             local x, y, z = inst.Transform:GetWorldPosition()
-            local ents = TheSim:FindEntities(x, y, z, inst.components.playercontroller.directwalking and 3 or 6, nil, PICKUP_TARGET_EXCLUDE_TAGS, MOUNTED_PICKUP_TAGS)
+            local ents = _G.TheSim:FindEntities(x, y, z, inst.components.playercontroller.directwalking and 3 or 6, nil, PICKUP_TARGET_EXCLUDE_TAGS, MOUNTED_PICKUP_TAGS)
             for i, v in ipairs(ents) do
                 if v ~= inst and v.entity:IsVisible() and CanEntitySeeTarget(inst, v) then
                     local action = GetPickupAction(inst,v)
