@@ -11,4 +11,4 @@ Pick, PickUp, Feeding, Jumping wormhole, Teleport, Store
 3. [x] Container can be open
 4. [ ] With any thing required tools or saddle? Maybe is ability for character, fall down off beefalo back sometime will learnig more action...
 5. [ ] Attack can use weapon.
-6. [ ] Beefalo can command when feeding: stay here,  follow me, underarm , rollover(X)
+6. [ ] Beefalo can command when feeding: stay here,  follow me, lying down , rollover(X)
