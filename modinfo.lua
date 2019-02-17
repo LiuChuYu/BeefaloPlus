@@ -80,4 +80,13 @@ configuration_options = {
     },
     default = "on"
   },
+  {
+    name = "Store",
+    label = "Store",
+    options = {
+      {description = "On", data = "on"},
+      {description = "Off", data = "off"},
+    },
+    default = "on"
+  },
 }

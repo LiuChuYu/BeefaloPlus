@@ -4,11 +4,18 @@ local valid_action = {
     GIVE = GetModConfigData("Feeding",true) == "on",
     JUMPIN = GetModConfigData("Jumping",true) == "on",
     TELEPORT = GetModConfigData("Teleport",true) == "on",
+    STORE = GetModConfigData("Store",true) == "on",
+    RUMMAGE = GetModConfigData("Store",true) == "on",
+    -- CONSTRUCT = GetModConfigData("Store",true) == "on",
+    COOK = GetModConfigData("Store",true) == "on",
+    -- SCENE = GetModConfigData("Store",true) == "on",
+    -- TURNON = GetModConfigData("Store",true) == "on",
+    -- TURNOFF = GetModConfigData("Store",true) == "on",
 }
-
-local ACTIONS = GLOBAL.ACTIONS
-local CanEntitySeeTarget = GLOBAL.CanEntitySeeTarget
-local BufferedAction = GLOBAL.BufferedAction
+local _G = GLOBAL
+local ACTIONS = _G.ACTIONS
+local CanEntitySeeTarget = _G.CanEntitySeeTarget
+local BufferedAction = _G.BufferedAction
 local TARGET_EXCLUDE_TAGS = { "FX", "NOCLICK", "DECOR", "INLIMBO" }
 local PICKUP_TARGET_EXCLUDE_TAGS = { "catchable", "mineactive", "intense" }
 local HAUNT_TARGET_EXCLUDE_TAGS = { "haunted", "catchable" }
@@ -74,7 +81,7 @@ local function MountedActionButton(inst, force_target)
     --catching
     if inst:HasTag("cancatch") and not inst.components.playercontroller:IsDoingOrWorking() then
         if force_target == nil then
-            local target = GLOBAL.FindEntity(inst, 10, nil, { "catchable" }, TARGET_EXCLUDE_TAGS)
+            local target = _G.FindEntity(inst, 10, nil, { "catchable" }, TARGET_EXCLUDE_TAGS)
             if CanEntitySeeTarget(inst, target) then
                 return BufferedAction(inst, target, ACTIONS.CATCH)
             end
@@ -86,7 +93,7 @@ local function MountedActionButton(inst, force_target)
 
     --unstick
     -- if force_target == nil then
-    --     local target = GLOBAL.FindEntity(inst, 10, nil, { "pinned" }, TARGET_EXCLUDE_TAGS)
+    --     local target = _G.FindEntity(inst, 10, nil, { "pinned" }, TARGET_EXCLUDE_TAGS)
     --     if CanEntitySeeTarget(inst, target) then
     --         return BufferedAction(inst, target, ACTIONS.UNPIN)
     --     end
@@ -119,7 +126,7 @@ end
 
 local function MountedActionFilter(inst, action)
   if action ~= nil then
-    -- print(MountedActionFilter, GLOBAL.dumptable(action))
+    print(MountedActionFilter, _G.dumptable(action))
     return action.mount_valid == true
   end
 end
@@ -141,7 +148,7 @@ end
 AddClassPostConstruct("components/rider_replica",RiderPostInit)
 
 
-local COLLISION = GLOBAL.COLLISION
+local COLLISION = _G.COLLISION
 local function SGwilsonPostInit(self)
  
   if valid_action.JUMPIN then
@@ -246,11 +253,6 @@ end
 
 AddStategraphPostInit("wilson",SGwilsonPostInit)
 
-function Set (list)
-  local set = {}
-  for _, l in ipairs(list) do set[l] = true end
-  return set
-end
 for i,v in pairs(ACTIONS) do
   if valid_action[i] then
     v.mount_valid = true
@@ -271,6 +273,48 @@ end
 if valid_action.GIVE then
   AddComponentAction("USEITEM","tradable",tradablefn)
 end
+
+
+
+--STORE
+
+local function OnUpdate(self, dt)
+    if self.opener == nil then
+        self.inst:StopUpdatingComponent(self)
+    elseif not (self.inst.components.inventoryitem ~= nil and
+                self.inst.components.inventoryitem:IsHeldBy(self.opener))
+        and (not (self.opener:IsNear(self.inst, 3) and
+                    _G.CanEntitySeeTarget(self.opener, self.inst))) then
+        self:Close()
+    end
+end
+
+local function ChangeContainerComponent(self, inst)
+  self.OnUpdate = OnUpdate
+end
+
+local function containerfn(inst, doer, actions, right)
+    if inst:HasTag("bundle") then
+        if right and inst.replica.container:IsOpenedBy(doer) then
+            table.insert(actions, doer.components.constructionbuilderuidata ~= nil 
+              and doer.components.constructionbuilderuidata:GetContainer() == inst 
+              and ACTIONS.APPLYCONSTRUCTION or ACTIONS.WRAPBUNDLE)
+        end
+    elseif not inst:HasTag("burnt") and
+        inst.replica.container:CanBeOpened() 
+        and doer.replica.inventory ~= nil 
+        -- and not (doer.replica.rider ~= nil and doer.replica.rider:IsRiding()) 
+      then
+        table.insert(actions, ACTIONS.RUMMAGE)
+    end
+end
+
+
+if(valid_action.STORE) then
+  AddComponentPostInit("container", ChangeContainerComponent)
+  AddComponentAction("SCENE","container",containerfn)
+end
+
 
 -- attack use weapon
 -- ThePlayer.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS):HasTag("rangedweapon"))
