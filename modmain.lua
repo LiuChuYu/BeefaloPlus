@@ -4,6 +4,7 @@ local ACTIONS = _G.ACTIONS
 local valid_action = {
     PICK = GetModConfigData("Pick",true) == "on",
     PICKUP = GetModConfigData("PickUp",true) == "on",
+    HARVEST = GetModConfigData("PickUp",true) == "on",
     GIVE = GetModConfigData("Feeding",true) == "on",
     JUMPIN = GetModConfigData("Jumping",true) == "on",
     TELEPORT = GetModConfigData("Teleport",true) == "on",
@@ -138,7 +139,7 @@ end
 -- Rider Action Init
 local function MountedActionFilter(inst, action)
   if action ~= nil then
-    print(MountedActionFilter, _G.dumptable(action))
+    -- print(MountedActionFilter, _G.dumptable(action))
     return action.mount_valid == true
   end
 end
@@ -323,11 +324,27 @@ local function containerfn(inst, doer, actions, right)
     end
 end
 
+function stewerfn(inst, doer, actions, right)
+    if not inst:HasTag("burnt") 
+       -- and not (doer.replica.rider ~= nil and doer.replica.rider:IsRiding()) 
+      then
+        if inst:HasTag("donecooking") then
+            table.insert(actions, ACTIONS.HARVEST)
+        elseif right and
+            (inst:HasTag("readytocook")
+            or (inst.replica.container ~= nil and
+                inst.replica.container:IsFull() and
+                inst.replica.container:IsOpenedBy(doer))) then
+            table.insert(actions, ACTIONS.COOK)
+        end
+    end
+end
+
 if(valid_action.STORE) then
   AddComponentPostInit("container", ChangeContainerComponent)
   AddComponentAction("SCENE","container",containerfn)
+  AddComponentAction("SCENE","stewer",stewerfn)
 end
-
 
 -- attack use weapon
 -- ThePlayer.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS):HasTag("rangedweapon"))
