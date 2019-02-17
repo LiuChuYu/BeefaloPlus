@@ -1,14 +1,14 @@
 This is a mod for a game called Don't Starve Together.
 
-It adds the functionality to do everything you can do normally on a beefalo.
+Now you can do more action on beefalo.
 
-Currently, most of the actions doesn't work. Guaranteed working actions are:
-1. picking (grass/twig/flower .etc), 
-2. picking up (things dropped on the ground)
-3. use structures that doesn't have sub-interfaces (like chest/chester)
+Pick, PickUp, Feeding, Jumping wormhole, Teleport, Store
 
 # TODO 
+0. [x] Some action can doing on the beefalo, like pickup, pick, pikachu(X)
 1. [x] Add SPACE support (press space to automatically do things)
-2. [x] Chop/Dig/Mine/Hammer ... (should all use the same fix)
-3. [ ] Use structures like chester/crockpot/fridge (check out componentactions.lua)
-4. [ ] Feed beefalo while on it (probably hard)
+2. [x] Remove Chop/Dig/Mine/Hammer , use Maxwell is a better choice.
+3. [x] Container can be open
+4. [ ] With any thing required tools or saddle? Maybe is ability for character, fall down off beefalo back sometime will learnig more action...
+5. [ ] Attack can use weapon.
+6. [ ] Beefalo can command when feeding: stay here,  follow me, underarm , rollover(X)

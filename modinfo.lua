@@ -28,8 +28,8 @@ client_only_mod = false
 --This lets people search for servers with this mod by these tags
 server_filter_tags = {}
 
-icon_atlas = ""
-icon = ""
+icon_atlas = "modicon.xml"
+icon = "modicon.tex"
 
 forumthread = ""
 
