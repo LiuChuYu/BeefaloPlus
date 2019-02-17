@@ -1,5 +1,5 @@
 --The name of the mod displayed in the 'mods' screen.
-name = "Work on Beefalo"
+name = "my Work on Beefalo"
 
 --A description of the mod.
 description = "Do work while riding a beefalo. "

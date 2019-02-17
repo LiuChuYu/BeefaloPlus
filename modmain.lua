@@ -1,15 +1,177 @@
 
+local function SortByTypeAndValue(a, b)
+    local typea, typeb = type(a), type(b)
+    return typea < typeb or (typea == typeb and a < b)
+end
+
+function dumptablequiet(obj, indent, recurse_levels, visit_table)
+    return dumptable(obj, indent, recurse_levels, visit_table, true)
+end
+function dumptable(obj, indent, recurse_levels, visit_table, is_terse)
+    local is_top_level = visit_table == nil
+    if visit_table == nil then
+        visit_table = {}
+    end
+
+    indent = indent or 1
+    local i_recurse_levels = recurse_levels or 5
+    if obj then
+        local dent = string.rep("\t", indent)
+        if type(obj)==type("") then
+            print(obj)
+            return
+        end
+        if type(obj) == "table" then
+            if visit_table[obj] ~= nil then
+                print(dent.."(Already visited",obj,"-- skipping.)")
+                return
+            else
+                visit_table[obj] = true
+            end
+        end
+        local keys = {}
+        for k,v in pairs(obj) do
+            table.insert(keys, k)
+        end
+        table.sort(keys, SortByTypeAndValue)
+        if not is_terse and is_top_level and #keys == 0 then
+            print(dent.."(empty)")
+        end
+        for i,k in ipairs(keys) do
+            local v = obj[k]
+            if type(v) == "table" and i_recurse_levels>0 then
+                if v.entity and v.entity:GetGUID() then
+                    print(dent.."K: ",k," V: ", v, "(Entity -- skipping.)")
+                else
+                    print(dent.."K: ",k," V: ", v)
+                    dumptable(v, indent+1, i_recurse_levels-1, visit_table)
+                end
+            else
+                print(dent.."K: ",k," V: ",v)
+            end
+        end
+    elseif not is_terse then
+        print("nil")
+    end
+end
+-------------------------------------------------------------------------------------debug
+local ACTIONS = GLOBAL.ACTIONS
+local MOUNTED_PICKUP_TAGS = {
+  "_inventoryitem",
+  "pickable",
+  "donecooking",
+  "readyforharvest",
+  "notreadyforharvest",
+  "harvestable",
+  "trapsprung",
+  "minesprung",
+  "dried",
+  "inactive",
+  "smolder",
+  "saddled",
+  "brushable",
+  "tapped_harvestable",
+}
+
+local MOUNTED_ACTION_TAGS = {}
+
+local MOUNTED_TARGET_EXCLUDE_TAGS = { "FX", "NOCLICK", "DECOR", "INLIMBO", "catchable", "sign" , "mineactive", "intense"}
+
+local function GetMountedAction(target)
+    
+    if target:HasTag("smolder") then
+        return ACTIONS.SMOTHER
+    elseif target:HasTag("quagmireharvestabletree") and not target:HasTag("fire") then
+        return ACTIONS.HARVEST_TREE
+    elseif target:HasTag("trapsprung") then
+        return ACTIONS.CHECKTRAP
+    elseif target:HasTag("minesprung") then
+        return ACTIONS.RESETMINE
+    -- elseif target:HasTag("inactive") then
+        -- return (not target:HasTag("wall") or self.inst:IsNear(target, 2.5)) and ACTIONS.ACTIVATE or nil
+    -- elseif target.replica.inventoryitem ~= nil and
+        -- target.replica.inventoryitem:CanBePickedUp() and
+        -- not (target:HasTag("heavy") or target:HasTag("fire") or target:HasTag("catchable")) then
+        -- return (self:HasItemSlots() or target.replica.equippable ~= nil) and ACTIONS.PICKUP or nil
+    elseif target:HasTag("pickable") and not target:HasTag("fire") then
+        return ACTIONS.PICK
+    elseif target:HasTag("harvestable") then
+        return ACTIONS.HARVEST
+    elseif target:HasTag("readyforharvest") or
+        (target:HasTag("notreadyforharvest") and target:HasTag("withered")) then
+        return ACTIONS.HARVEST
+    elseif target:HasTag("tapped_harvestable") and not target:HasTag("fire") then
+    return ACTIONS.HARVEST
+    elseif target:HasTag("dried") and not target:HasTag("burnt") then
+        return ACTIONS.HARVEST
+    elseif target:HasTag("donecooking") and not target:HasTag("burnt") then
+        return ACTIONS.HARVEST
+    elseif tool ~= nil and tool:HasTag("unsaddler") and target:HasTag("saddled") and (not target.replica.health or not target.replica.health:IsDead()) then
+        return ACTIONS.UNSADDLE
+    elseif tool ~= nil and tool:HasTag("brush") and target:HasTag("brushable") and (not target.replica.health or not target.replica.health:IsDead()) then
+        return ACTIONS.BRUSH
+    -- elseif self.inst.components.revivablecorpse ~= nil and target:HasTag("corpse") and ValidateCorpseReviver(target, self.inst) then
+        -- return ACTIONS.REVIVE_CORPSE
+    end
+end
+
+local function MountedActionButton(inst, force_target)
+    if not inst.components.playercontroller:IsDoingOrWorking() then
+        if force_target == nil then
+            local x, y, z = inst.Transform:GetWorldPosition()
+            local ents = TheSim:FindEntities(x, y, z, inst.components.playercontroller.directwalking and 3 or 6, nil, MOUNTED_TARGET_EXCLUDE_TAGS, MOUNTED_PICKUP_TAGS)
+            for i, v in ipairs(ents) do
+                if v ~= inst and v.entity:IsVisible() and GLOBAL.CanEntitySeeTarget(inst, v) then
+                    local action = GetMountedAction(v)
+                    if action ~= nil then
+                        return GLOBAL.BufferedAction(inst, v, action)
+                    end
+                end
+            end
+        elseif inst:GetDistanceSqToInst(force_target) <= (inst.components.playercontroller.directwalking and 9 or 36) then
+            local action = GetMountedAction(force_target)
+            if action ~= nil then
+                return GLOBAL.BufferedAction(inst, force_target, action)
+            end
+        end
+    end
+end
+
+-----------------------------------------------------------mounted action button
+
+
+
+-- local TARGET_EXCLUDE_TAGS = { "FX", "NOCLICK", "DECOR", "INLIMBO" }
+-- local function ActionButtonOverride(inst, force_target)
+--     --catching
+--     if inst:HasTag("cancatch") and not inst.components.playercontroller:IsDoingOrWorking() then
+--         if force_target == nil then
+--             local target = FindEntity(inst, 10, nil, { "catchable" }, TARGET_EXCLUDE_TAGS)
+--             if CanEntitySeeTarget(inst, target) then
+--                 return BufferedAction(inst, target, ACTIONS.CATCH)
+--             end
+--         elseif inst:GetDistanceSqToInst(force_target) <= 100 and
+--             force_target:HasTag("catchable") then
+--             return BufferedAction(inst, force_target, ACTIONS.CATCH)
+--         end
+--     end
+-- end
+
 local function MountedActionFilter(inst, action)
-  return action.mount_valid == true
+  if action ~= nil then
+    return action.mount_valid == true
+  end
 end
 
 local function RiderPostInit(self)
   self.SetActionFilter = function(self,riding)
     if self.inst.components.playercontroller ~= nil then
       if riding then
-        self.inst.components.playeractionpicker:PushActionFilter(MountedActionFilter, 20)
+          self.inst.components.playercontroller.actionbuttonoverride = MountedActionButton
+          self.inst.components.playeractionpicker:PushActionFilter(MountedActionFilter, 20)
       else
-        self.inst.components.playeractionpicker:PopActionFilter(MountedActionFilter)
+          self.inst.components.playercontroller.actionbuttonoverride = nil
+          self.inst.components.playeractionpicker:PopActionFilter(MountedActionFilter)
       end
     end
   end
@@ -38,7 +200,8 @@ local function SGwilsonPostInit(self)
     self.states["mine_start"].onenter =
       function(inst)
         inst.components.locomotor:Stop()
-        inst.AnimState:PlayAnimation("pickaxe_pre")
+        inst.AnimState:PlayAnimation("emote_pre_sit3")
+        -- data = { anim = { { "emote_pre_sit1", "emote_loop_sit1" }, { "emote_pre_sit3", "emote_loop_sit3" } }, randomanim = true, loop = true, fx = false, mounted = true, mountsound = "walk", mountsounddelay = 10 * FRAMES },
         inst.sg:GoToState("mine")
       end
   end
@@ -47,7 +210,7 @@ local function SGwilsonPostInit(self)
     self.states["dig_start"].onenter =
       function(inst)
         inst.components.locomotor:Stop()
-        inst.AnimState:PlayAnimation("shovel_pre")
+        inst.AnimState:PlayAnimation("emote_pre_sit3")
         inst.sg:GoToState("dig")
       end
   end
@@ -56,7 +219,7 @@ local function SGwilsonPostInit(self)
     self.states["hammer_start"].onenter =
       function(inst)
         inst.components.locomotor:Stop()
-        inst.AnimState:PlayAnimation("hammer_pre")
+        inst.AnimState:PlayAnimation("emote_pre_sit3")
         inst.sg:GoToState("hammer")
       end
   end
@@ -64,7 +227,7 @@ local function SGwilsonPostInit(self)
   self.states["bugnet_start"].onenter =
     function(inst)
       inst.components.locomotor:Stop()
-      inst.AnimState:PlayAnimation("hammer_pre")
+      inst.AnimState:PlayAnimation("emote_pre_sit3")
       inst.sg:GoToState("hammer")
     end
   if jump then
@@ -154,7 +317,6 @@ end
 
 AddStategraphPostInit("wilson",SGwilsonPostInit)
 
-local ACTIONS = GLOBAL.ACTIONS
 function Set (list)
   local set = {}
   for _, l in ipairs(list) do set[l] = true end
@@ -166,9 +328,9 @@ if not jump then
 end
 for i,v in pairs(ACTIONS) do
   if not exclude[i] then
-    v.mount_valid = true
-  else
-    v.mount_valid = false
+    if v.id == "PICK" or v.id == "PICKUP" then
+      v.mount_valid = true
+    end
   end
 end
 
