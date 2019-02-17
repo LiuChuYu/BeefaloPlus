@@ -1,14 +1,14 @@
 --The name of the mod displayed in the 'mods' screen.
-name = "my Work on Beefalo"
+name = "BeefaloPlus"
 
 --A description of the mod.
-description = "Do work while riding a beefalo. "
+description = "More action on beefalo."
 
 --Who wrote this awesome mod?
-author = "Ps-Pencil"
+author = "Disz"
 
 --A version number so you can ask people if they are running an old version of your mod.
-version = "1.11"
+version = "20190212"
 
 --This lets other players know if your mod is out of date. This typically needs to be updated every time there's a new game update.
 api_version = 6
@@ -36,8 +36,8 @@ forumthread = ""
 
 configuration_options = {
   {
-    name = "Chopping",
-    label = "Chopping",
+    name = "Pick",
+    label = "Pick",
     options = {
       {description = "On", data = "on"},
       {description = "Off", data = "off"},
@@ -45,8 +45,8 @@ configuration_options = {
     default = "on"
   },
   {
-    name = "Mining",
-    label = "Mining",
+    name = "PickUp",
+    label = "PickUp",
     options = {
       {description = "On", data = "on"},
       {description = "Off", data = "off"},
@@ -54,17 +54,8 @@ configuration_options = {
     default = "on"
   },
   {
-    name = "Digging",
-    label = "Digging",
-    options = {
-      {description = "On", data = "on"},
-      {description = "Off", data = "off"},
-    },
-    default = "on"
-  },
-  {
-    name = "Hammering",
-    label = "Hammering",
+    name = "Feeding",
+    label = "Feeding",
     options = {
       {description = "On", data = "on"},
       {description = "Off", data = "off"},
@@ -73,20 +64,20 @@ configuration_options = {
   },
   {
     name = "Jumping",
-    label = "Using wormholes",
+    label = "Jumping",
     options = {
       {description = "On", data = "on"},
       {description = "Off", data = "off"},
     },
-  default = "on",
+    default = "on"
   },
   {
-    name = "Feeding",
-    label = "Feeding birds",
+    name = "Teleport",
+    label = "Teleport",
     options = {
       {description = "On", data = "on"},
       {description = "Off", data = "off"},
     },
-    default = "on",
+    default = "on"
   },
 }

@@ -1,3 +1,11 @@
+local valid_action = {
+    PICK = GetModConfigData("Pick",true) == "on",
+    PICKUP = GetModConfigData("PickUp",true) == "on",
+    GIVE = GetModConfigData("Feeding",true) == "on",
+    JUMPIN = GetModConfigData("Jumping",true) == "on",
+    TELEPORT = GetModConfigData("Teleport",true) == "on",
+}
+
 local ACTIONS = GLOBAL.ACTIONS
 local CanEntitySeeTarget = GLOBAL.CanEntitySeeTarget
 local BufferedAction = GLOBAL.BufferedAction
@@ -8,7 +16,6 @@ for i, v in ipairs(TARGET_EXCLUDE_TAGS) do
     table.insert(PICKUP_TARGET_EXCLUDE_TAGS, v)
     table.insert(HAUNT_TARGET_EXCLUDE_TAGS, v)
 end
-
 local function GetPickupAction(inst, target)
     if target:HasTag("smolder") then
         return ACTIONS.SMOTHER
@@ -134,18 +141,10 @@ end
 AddClassPostConstruct("components/rider_replica",RiderPostInit)
 
 
-
-local chop = GetModConfigData("Chopping",true) == "on"
-local dig = GetModConfigData("Digging",true) == "on"
-local hammer = GetModConfigData("Hammering",true) == "on"
-local mine = GetModConfigData("Mining",true) == "on"
-local jump = GetModConfigData("Jumping",true) == "on"
-local feed = GetModConfigData("Feeding",true) == "on"
-
 local COLLISION = GLOBAL.COLLISION
 local function SGwilsonPostInit(self)
  
-  if jump then
+  if valid_action.JUMPIN then
     self.states["jumpin_pre"].onenter =
       function(inst)
         inst.components.locomotor:Stop()
@@ -194,6 +193,7 @@ local function SGwilsonPostInit(self)
       end
       inst.Physics:SetMotorVel(inst.sg.statemem.speed * .5, 0, 0)
       inst.sg.statemem.teleportarrivestate = "jumpout"
+
       if inst.sg.statemem.target ~= nil and
         inst.sg.statemem.target:IsValid() and
       inst.sg.statemem.target.components.teleporter ~= nil then
@@ -210,6 +210,7 @@ local function SGwilsonPostInit(self)
           return
         end
       end
+      
       inst.sg:GoToState("jumpout")
     end
     self.states["jumpout"].onenter = function(inst)
@@ -232,6 +233,11 @@ local function SGwilsonPostInit(self)
       inst.AnimState:PlayAnimation("heavy_mount")
     end
     self.states["exittownportal"].onenter = function(inst)
+        --ToggleOffPhysics
+        inst.sg.statemem.isphysicstoggle = true
+        inst.Physics:ClearCollisionMask()
+        inst.Physics:CollidesWith(COLLISION.GROUND)
+
         inst.components.locomotor:Stop()
         inst.AnimState:PlayAnimation("heavy_mount")
     end
@@ -245,13 +251,6 @@ function Set (list)
   for _, l in ipairs(list) do set[l] = true end
   return set
 end
-local valid_action = {
-    PICK = true,
-    PICKUP = true,
-    GIVE = true,
-    JUMPIN = true,
-    TELEPORT = true,
-}
 for i,v in pairs(ACTIONS) do
   if valid_action[i] then
     v.mount_valid = true
@@ -269,9 +268,9 @@ local function tradablefn(inst, doer, target, actions)
       table.insert(actions, ACTIONS.GIVE)
   end
 end
-if feed then
+if valid_action.GIVE then
   AddComponentAction("USEITEM","tradable",tradablefn)
 end
 
--- attack
+-- attack use weapon
 -- ThePlayer.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS):HasTag("rangedweapon"))
