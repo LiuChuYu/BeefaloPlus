@@ -386,3 +386,18 @@ if(valid_action.STORE) then
   AddComponentAction("SCENE","container",containerfn)
   AddComponentAction("SCENE","stewer",stewerfn)
 end
+
+function ToggleHealthRegen(inst)
+  if(inst.components.saltlicker.salted or inst.components.sleeper:IsAsleep()) then
+    inst.components.health:StartRegen(_G.TUNING.BEEFALO_HEALTH_REGEN*3, _G.TUNING.BEEFALO_HEALTH_REGEN_PERIOD/4)
+  else
+    inst.components.health:StopRegen()
+  end
+end
+if GetModConfigData("HealthRegenWhenSleep",true) == "on" then
+  AddPrefabPostInit("beefalo", function(inst)
+    inst.components.health:StopRegen()
+    inst:ListenForEvent("gotosleep", ToggleHealthRegen)
+    inst:ListenForEvent("onwakeup", ToggleHealthRegen)
+  end)
+end

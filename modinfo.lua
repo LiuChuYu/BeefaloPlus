@@ -127,8 +127,8 @@ configuration_options = {
   },
   divide("Other", "..."),
   {
-    name = "BeefaloHealthRegen",
-    label = "BeefaloHealthRegen",
+    name = "HealthRegenWhenSleep",
+    label = "HealthRegenWhenSleep",
     options = {
       {description = "On", data = "on"},
       {description = "Off", data = "off"},
