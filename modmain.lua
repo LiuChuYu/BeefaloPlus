@@ -16,6 +16,19 @@ local valid_action = {
     -- TURNON = GetModConfigData("Store",true) == "on",
     -- TURNOFF = GetModConfigData("Store",true) == "on",
 }
+
+local valid_prefabs = {
+    spear = GetModConfigData("AllowUseSpear",true) == "on",
+    spear_wathgrithr = GetModConfigData("AllowUseSpear",true) == "on",
+    hambat = GetModConfigData("AllowUseBat",true) == "on",
+    ruins_bat = GetModConfigData("AllowUseBat",true) == "on",
+    batbat = GetModConfigData("AllowUseBat",true) == "on",
+    tentaclespike = GetModConfigData("AllowUseStick",true) == "on",
+    nightstick = GetModConfigData("AllowUseStick",true) == "on",
+    nightsword = GetModConfigData("AllowUseSword",true) == "on",
+}
+
+
 for i,v in pairs(ACTIONS) do
   if valid_action[i] then
     v.mount_valid = true
@@ -283,6 +296,20 @@ local function SGwilsonPostInit(self)
         inst.AnimState:PlayAnimation(inst.components.rider:IsRiding() and "heavy_mount" or "townportal_exit_pst")
     end
   end
+
+-- attack use weapon
+-- ThePlayer.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS):AddTag("rangedweapon")
+  local fun_swap  = self.states["attack"].onenter
+  self.states["attack"].onenter = function(inst)
+    local equip = inst.components.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS)
+    if (equip ~= nil) and valid_prefabs[equip.prefab] and not equip:HasTag("rangedweapon") then
+      equip:AddTag("rangedweapon")
+      fun_swap(inst)
+      equip:RemoveTag("rangedweapon")
+    else
+      fun_swap(inst)
+    end
+  end
 end
 
 AddStategraphPostInit("wilson",SGwilsonPostInit)
@@ -359,6 +386,3 @@ if(valid_action.STORE) then
   AddComponentAction("SCENE","container",containerfn)
   AddComponentAction("SCENE","stewer",stewerfn)
 end
-
--- attack use weapon
--- ThePlayer.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS):HasTag("rangedweapon"))
