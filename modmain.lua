@@ -388,12 +388,14 @@ if(valid_action.STORE) then
 end
 
 function ToggleHealthRegen(inst)
+    if inst.components.health ~= nil then
       if(inst.components.saltlicker.salted or inst.components.sleeper:IsAsleep()) then
         inst.components.health:StartRegen(_G.TUNING.BEEFALO_HEALTH_REGEN*3, _G.TUNING.BEEFALO_HEALTH_REGEN_PERIOD/4)
       else
         inst.components.health:StopRegen()
       end
     end
+end
 if GetModConfigData("HealthRegenWhenSleep",true) == "on" then
   AddPrefabPostInit("beefalo", function(inst)
       inst:ListenForEvent("gotosleep", ToggleHealthRegen)
