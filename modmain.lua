@@ -305,14 +305,13 @@ local function SGwilsonPostInit(self)
         if (equip ~= nil) and valid_prefabs[equip.prefab] and not equip:HasTag('rangedweapon') then
             equip:AddTag('rangedweapon')
             fun_swap(inst)
-            equip:RemoveTag('rangedweapon')
         else
             fun_swap(inst)
         end
     end
 end
-
 AddStategraphPostInit('wilson', SGwilsonPostInit)
+
 
 -- Feeding the bird
 
