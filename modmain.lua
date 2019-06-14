@@ -400,6 +400,7 @@ if GetModConfigData('HealthRegenWhenSleep', true) == 'on' then
     AddPrefabPostInit(
         'beefalo',
         function(inst)
+            inst:ListenForEvent('healthdelta', ToggleHealthRegen)
             inst:ListenForEvent('gotosleep', ToggleHealthRegen)
             inst:ListenForEvent('onwakeup', ToggleHealthRegen)
         end
