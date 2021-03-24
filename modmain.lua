@@ -331,13 +331,18 @@ end
 --STORE
 
 local function OnUpdate(self, dt)
-    if self.opener == nil then
+    if self.opencount == 0 then
         self.inst:StopUpdatingComponent(self)
-    elseif
-        not (self.inst.components.inventoryitem ~= nil and self.inst.components.inventoryitem:IsHeldBy(self.opener)) and
-            (not (self.opener:IsNear(self.inst, 3) and _G.CanEntitySeeTarget(self.opener, self.inst)))
-     then
-        self:Close()
+    else
+        --attempt to close the chest for all players who have the chest opened who meet the requirements for closing it.
+        for opener, _ in pairs(self.openlist) do
+            if not (self.inst.components.inventoryitem ~= nil and
+                    self.inst.components.inventoryitem:IsHeldBy(opener)) and
+                    not (opener:IsNear(self.inst, 3) and
+                    _G.CanEntitySeeTarget(opener, self.inst)) then
+                self:Close(opener)
+            end
+        end
     end
 end
 
